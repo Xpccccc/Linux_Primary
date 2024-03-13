@@ -4,15 +4,30 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #define SIZE 1024
 #define MAX_LEN 128
 #define SEP " "
 
+
+// 下面的都和重定向有关
+#define NoneRedir  -1
+#define StdinRedir  0
+#define StdoutRedir 1
+#define AppendRedir 2
+
+//#define IgnSpace(buf,pos) do{ while(isspace(buf[pos])) pos++; }while(0)
+
+int redir_type = NoneRedir;
+char *filename = NULL;
+
 char* argv[MAX_LEN];//命令行字符串数组
 char pwd[SIZE];
 char envtemp[SIZE];
 int lastcode = 0;//退出码
+
 
 const char* HostName(){
     char* hostname = getenv("HOSTNAME");
@@ -46,7 +61,72 @@ int Interactive(char* commandline, int size){
     return strlen(commandline);//空串返回0
 }
 
+
+void Check_redir(char in[])
+{
+    // ls -a -l
+    // ls -a -l > log.txt
+    // ls -a -l >> log.txt
+    // cat < log.txt
+    redir_type = NoneRedir;
+    filename = NULL;
+    int pos = strlen(in) - 1;
+    while( pos >= 0 )
+    {
+        if(in[pos] == '>')
+        {
+            if(in[pos-1] == '>')
+            {
+                redir_type = AppendRedir;
+                in[pos-1] = 0;
+                pos++;
+                //IgnSpace(in, pos);
+                
+                while(in[pos] == ' '){
+                    pos++;
+                }
+
+                filename = in+pos;
+                break;
+            }
+            else
+            {
+                redir_type = StdoutRedir;
+                in[pos++] = 0;
+                //IgnSpace(in, pos);
+                while(in[pos] == ' '){
+                    pos++;
+                }
+                filename = in+pos;
+                //printf("debug: %s, %d\n", filename, redir_type);
+                break;
+            }
+        }
+        else if(in[pos] == '<')
+        {
+            redir_type = StdinRedir;
+            in[pos++] = 0;
+            //IgnSpace(in, pos);
+            while(in[pos] == ' '){
+                pos++;
+            }
+            
+            filename = in+pos;
+            //printf("debug: %s, %d\n", filename, redir_type);
+            break;
+        }
+        else
+        {
+            pos--;
+        }
+    }
+}
+
+
 void Split(char* commandline){
+    
+    Check_redir(commandline);
+
     int i = 0;
     argv[i++] = strtok(commandline,SEP);
     while(argv[i++] = strtok(NULL,SEP));
@@ -104,11 +184,34 @@ int BuildingCmd(){
     return ret;
 }
 
+
 void Execute(){
     //只能交给子进程，如果用父进程执行命令行，执行一次就结束了
     pid_t id = fork();
     if(id < 0) perror("fork\n");
     else if(id == 0){
+        int fd = -1;
+        if(redir_type == StdinRedir)
+        {
+            fd = open(filename, O_RDONLY);
+            dup2(fd, 0);
+        }
+        else if(redir_type == StdoutRedir)
+        {
+            umask(0);
+            fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC,0666);
+            dup2(fd, 1);
+        }
+        else if(redir_type == AppendRedir)
+        {
+            fd = open(filename, O_CREAT | O_WRONLY | O_APPEND);
+            dup2(fd, 1);
+        }
+        else
+        {
+            // do nothing
+        }
+
         execvp(argv[0],argv);
         exit(1);//执行完退出
     }

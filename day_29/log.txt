@@ -1,0 +1,8 @@
+总用量 40
+drwxrwxr-x  2 xp2 xp2  4096 3月  13 13:13 .
+drwxrwxr-x 24 xp2 xp2  4096 3月  13 12:54 ..
+-rw-rw-r--  1 xp2 xp2   827 3月  13 12:56 install.sh
+-rw-rw-rw-  1 xp2 xp2     0 3月  13 13:15 log.txt
+-rw-rw-r--  1 xp2 xp2    68 3月  13 12:54 Makefile
+-rwxrwxr-x  1 xp2 xp2 14008 3月  13 13:12 myshell
+-rw-rw-r--  1 xp2 xp2  5778 3月  13 13:12 myshell.c
