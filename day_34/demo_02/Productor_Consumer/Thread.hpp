@@ -79,7 +79,7 @@ namespace ThreadModule
         {
             _stop = true;
         }
-        ~Thread() {}
+        // ~Thread() {}
 
     private:
         pthread_t _tid;

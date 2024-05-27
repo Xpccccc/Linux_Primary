@@ -5,6 +5,8 @@
 #include "Task.hpp"
 #include "BlockQueue.hpp"
 
+
+
 using namespace ThreadModule;
 
 using namespace std;
@@ -43,10 +45,12 @@ void Consumer(blockqueue_t &bq, string &name)
         sleep(1);
     }
 }
+
+
 void StartComm(vector<Thread<blockqueue_t>> &threads, int num, blockqueue_t &bq, func_t<blockqueue_t> func, const char *name)
 {
     for (int i = 0; i < num; ++i)
-    {
+    {   
         string threadname = string(name) + to_string(i + 1);
         threads.emplace_back(func, bq, threadname);
         // threads.back().Start();
@@ -103,7 +107,7 @@ int main()
 //     // sleep(5);
 //     while (true)
 //     {
-//         srand(time(nullptr));
+//         srand(time(nullptr) ^ pthread_self());
 //         int a = rand() % 10;
 //         int b = rand() % 20;
 //         Task t(a, b);
